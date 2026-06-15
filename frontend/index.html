@@ -3,18 +3,132 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>The Ultimate Music Maker</title>
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles/main.css" />
-  <link rel="stylesheet" href="styles/components/controls.css" />
-  <link rel="stylesheet" href="styles/components/player.css" />
-  <link rel="stylesheet" href="styles/components/waveform.css" />
+  <title>AI Music Studio</title>
+  <link rel="stylesheet" href="styles/studio.css" />
 </head>
 <body>
-  <!-- Root mount point — UI panels injected here by scripts/main.js -->
-  <div id="app"></div>
+  <div class="studio">
 
-  <!-- Core entry point -->
-  <script type="module" src="scripts/main.js"></script>
+    <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+    <header class="topbar">
+      <span class="logo">AI Music Studio</span>
+      <div class="topbar-spacer"></div>
+      <button id="btn-generate" class="btn btn-primary">Generate Song</button>
+      <button id="btn-play" class="btn btn-transport" disabled title="Play / Stop  (Space)">▶</button>
+      <button id="btn-loop" class="btn btn-loop"      disabled title="Loop on — click to toggle">⟳</button>
+      <div class="topbar-divider"></div>
+      <button id="btn-download" class="btn btn-secondary" disabled>Download MIDI</button>
+      <button id="btn-debug" class="btn btn-dbg-toggle" title="Debug panel  (D)">dbg</button>
+    </header>
+
+    <!-- ── Control strip ───────────────────────────────────────────────────── -->
+    <div class="controls-strip">
+      <div class="ctrl-group">
+        <span class="ctrl-label">Key</span>
+        <select id="ctrl-key">
+          <option>C</option><option>C#</option><option>D</option>
+          <option>Eb</option><option>E</option><option>F</option>
+          <option>F#</option><option>G</option><option>Ab</option>
+          <option>A</option><option>Bb</option><option>B</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Mode</span>
+        <select id="ctrl-mode">
+          <option value="major">Major</option>
+          <option value="minor">Minor</option>
+          <option value="dorian">Dorian</option>
+          <option value="phrygian">Phrygian</option>
+          <option value="lydian">Lydian</option>
+          <option value="mixolydian">Mixolydian</option>
+          <option value="happy">Happy</option>
+          <option value="sad">Sad</option>
+          <option value="jazzy">Jazzy</option>
+          <option value="melancholic">Melancholic</option>
+          <option value="dark">Dark</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Genre</span>
+        <select id="ctrl-genre">
+          <option value="pop">Pop</option>
+          <option value="hip-hop">Hip-Hop</option>
+          <option value="jazz">Jazz</option>
+          <option value="lo-fi">Lo-Fi</option>
+          <option value="edm">EDM</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">BPM</span>
+        <input id="ctrl-bpm" type="number" value="120" min="60" max="240" step="1" />
+      </div>
+      <div class="ctrl-group">
+        <span class="ctrl-label">Bars</span>
+        <input id="ctrl-bars" type="number" value="4" min="1" max="16" step="1" />
+      </div>
+    </div>
+
+    <!-- ── Tracks area ──────────────────────────────────────────────────────── -->
+    <main class="tracks-area">
+
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">♫</div>
+        <div class="empty-hint">Click <strong>Generate Song</strong> to compose</div>
+      </div>
+
+      <div id="tracks-container" hidden>
+
+        <!-- Beat ruler -->
+        <div class="ruler-row">
+          <div class="ruler-spacer"></div>
+          <div class="ruler" id="ruler"></div>
+        </div>
+
+        <!-- Chords track -->
+        <div class="track track--chords">
+          <div class="track-header">
+            <div class="track-label">CHORDS</div>
+            <div class="track-meta" id="meta-chords"></div>
+          </div>
+          <div class="track-clip" id="clip-chords"></div>
+        </div>
+
+        <!-- Melody track -->
+        <div class="track track--melody">
+          <div class="track-header">
+            <div class="track-label">MELODY</div>
+            <div class="track-meta" id="meta-melody"></div>
+          </div>
+          <div class="track-clip" id="clip-melody"></div>
+        </div>
+
+        <!-- Drums track -->
+        <div class="track track--drums">
+          <div class="track-header">
+            <div class="track-label">DRUMS</div>
+            <div class="track-meta" id="meta-drums"></div>
+          </div>
+          <div class="track-clip" id="clip-drums"></div>
+        </div>
+
+      </div>
+    </main>
+
+    <!-- ── Status bar ───────────────────────────────────────────────────────── -->
+    <footer class="statusbar">
+      <span id="status-text" class="status-text">Ready</span>
+    </footer>
+
+  </div>
+  <!-- ── Debug panel (fixed overlay, toggle with D or dbg button) ─────────── -->
+  <div id="debug-panel" class="debug-panel" hidden>
+    <div class="dbg-header">DEBUG <span class="dbg-close" id="dbg-close">✕</span></div>
+    <div class="dbg-item"><span>BPM</span>   <span class="dbg-val" id="dbg-bpm">—</span></div>
+    <div class="dbg-item"><span>Beats</span> <span class="dbg-val" id="dbg-total">—</span></div>
+    <div class="dbg-item"><span>Beat</span>  <span class="dbg-val" id="dbg-beat">—</span></div>
+    <div class="dbg-item"><span>Bar</span>   <span class="dbg-val" id="dbg-bar">—</span></div>
+  </div>
+
+  <script src="scripts/studio.js"></script>
 </body>
 </html>

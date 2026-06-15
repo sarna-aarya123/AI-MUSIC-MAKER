@@ -587,3 +587,155 @@ body.daw-resizing * { cursor: ew-resize !important; user-select: none; }
 
 /* Vertically align header content from top (more controls means more height) */
 .track-header { justify-content: flex-start; padding-top: 9px; }
+
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* Phase 5 — One-Shot Generator panel                                          */
+/* ════════════════════════════════════════════════════════════════════════════ */
+
+.oneshot-panel {
+  position: fixed;
+  bottom: 30px;
+  left: 12px;
+  width: 420px;
+  background: rgba(8, 8, 8, 0.94);
+  border: 1px solid #2a2a2a;
+  border-radius: 5px;
+  z-index: 200;
+  backdrop-filter: blur(6px);
+  font-size: 11px;
+}
+
+.oneshot-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #1c1c1c;
+  user-select: none;
+}
+
+.oneshot-title {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+  color: var(--c-melody);   /* green — distinct from orange accent */
+  flex-shrink: 0;
+}
+
+.oneshot-hint {
+  font-size: 9px;
+  color: #282828;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.oneshot-toggle {
+  width: 18px;
+  height: 16px;
+  background: #181818;
+  border: 1px solid #2a2a2a;
+  color: #444;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.oneshot-toggle:hover { color: #888; border-color: #3a3a3a; }
+
+/* Body (collapsible) */
+.oneshot-body { padding: 8px 10px 10px; }
+.oneshot-body.collapsed { display: none; }
+
+/* Each control row */
+.oneshot-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+}
+.oneshot-row:last-of-type { margin-bottom: 0; }
+
+/* Text input */
+.oneshot-input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  background: #0e0e0e;
+  border: 1px solid #2e2e2e;
+  color: var(--text);
+  border-radius: 3px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-family: inherit;
+  outline: none;
+}
+.oneshot-input:focus { border-color: var(--c-melody); }
+.oneshot-input::placeholder { color: #2e2e2e; font-style: italic; }
+
+/* Preview button */
+.btn-oneshot-preview {
+  flex-shrink: 0;
+  height: 28px;
+  padding: 0 13px;
+  background: var(--c-melody);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.1s;
+}
+.btn-oneshot-preview:hover:not(:disabled) { filter: brightness(1.2); }
+.btn-oneshot-preview:active { transform: scale(0.97); }
+.btn-oneshot-preview:disabled { opacity: 0.4; cursor: default; }
+
+/* Assign row label */
+.oneshot-slots-label {
+  font-size: 9px;
+  color: #383838;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Assign slot buttons */
+.btn-assign {
+  height: 20px;
+  padding: 0 8px;
+  background: #111;
+  border: 1px solid #2a2a2a;
+  color: #424242;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  transition: color 0.1s, border-color 0.1s;
+}
+.btn-assign:hover { border-color: var(--c-melody); color: var(--c-melody); }
+.btn-assign.assigned {
+  background: rgba(62,170,76,0.12);
+  border-color: var(--c-melody);
+  color: var(--c-melody);
+}
+
+/* Info / status line */
+.oneshot-info {
+  min-height: 15px;
+  font-size: 10px;
+  font-family: 'Consolas', 'Menlo', monospace;
+  color: #333;
+  border-top: 1px solid #181818;
+  padding-top: 6px;
+  margin-top: 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.oneshot-info.ok  { color: var(--c-melody); }
+.oneshot-info.err { color: #e05252; }

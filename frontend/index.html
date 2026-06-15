@@ -120,6 +120,29 @@
     </footer>
 
   </div>
+  <!-- ── One-Shot Generator panel ────────────────────────────────────────── -->
+  <div id="oneshot-panel" class="oneshot-panel">
+    <div class="oneshot-header">
+      <span class="oneshot-title">ONE-SHOT GEN</span>
+      <span class="oneshot-hint">describe a sound, hear it instantly</span>
+      <button id="btn-oneshot-toggle" class="oneshot-toggle" title="Collapse">–</button>
+    </div>
+    <div id="oneshot-body" class="oneshot-body">
+      <div class="oneshot-row">
+        <input id="oneshot-input" type="text" class="oneshot-input"
+               placeholder='"tight punchy kick"  ·  "soft bright pluck"  ·  "metallic hi-hat"' />
+        <button id="btn-oneshot-preview" class="btn btn-oneshot-preview">▶ Preview</button>
+      </div>
+      <div class="oneshot-row">
+        <span class="oneshot-slots-label">Assign to slot →</span>
+        <button class="btn-assign" data-slot="kick"  title="Replace kick drum sound">KICK</button>
+        <button class="btn-assign" data-slot="snare" title="Replace snare sound">SNRE</button>
+        <button class="btn-assign" data-slot="hihat" title="Replace hi-hat sound">HHAT</button>
+      </div>
+      <div id="oneshot-info" class="oneshot-info"></div>
+    </div>
+  </div>
+
   <!-- ── Debug panel (fixed overlay, toggle with D or dbg button) ─────────── -->
   <div id="debug-panel" class="debug-panel" hidden>
     <div class="dbg-header">DEBUG <span class="dbg-close" id="dbg-close">✕</span></div>
@@ -135,5 +158,7 @@
   <script src="audio/scheduler.js"></script>
   <script src="scripts/studio.js"></script>
   <script src="scripts/editor.js"></script>
+  <script src="audio/oneshotEngine.js"></script>
+  <script src="scripts/oneShotUI.js"></script>
 </body>
 </html>

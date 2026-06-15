@@ -170,5 +170,27 @@ const AudioEngine = (() => {
     } catch (_) {}
   }
 
-  return { init, playDrum, playNote, playChord, stopAll, setInstrument };
+  // ── Drum slot reconfiguration (for One-Shot assign) ──────────────────────
+  // Mutates the envelope of an existing drum synth in-place.
+  // p is the parsed param object from OneShotEngine._parse().
+  // Slot: 'kick' | 'snare' | 'hihat'  (open_hat / ride / crash not supported)
+  function configDrumSlot(slot, p) {
+    if (!ready) return;
+    try {
+      if (slot === 'kick' && kick) {
+        kick.pitchDecay        = p.tight ? 0.02 : p.punchy ? 0.08 : 0.05;
+        kick.envelope.decay    = Math.max(0.05, p.decayTime);
+        kick.envelope.release  = Math.max(0.05, p.releaseTime);
+      } else if (slot === 'snare' && snare) {
+        snare.envelope.attack  = p.attackTime;
+        snare.envelope.decay   = Math.max(0.04, p.decayTime);
+        snare.envelope.release = Math.max(0.02, p.releaseTime);
+      } else if (slot === 'hihat' && hihat) {
+        hihat.envelope.decay   = Math.max(0.02, p.long ? 0.4 : p.tight ? 0.03 : 0.08);
+        hihat.envelope.release = Math.max(0.01, p.tight ? 0.01 : 0.03);
+      }
+    } catch (_) {}
+  }
+
+  return { init, playDrum, playNote, playChord, stopAll, setInstrument, configDrumSlot };
 })();

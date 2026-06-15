@@ -13,6 +13,7 @@ from flask_cors import CORS
 
 from backend.config import Config
 from backend.routes.generation import generation_bp
+from backend.routes.composition import composition_bp
 from backend.routes.analysis import analysis_bp
 from backend.routes.similarity import similarity_bp
 from backend.routes.sound import sound_bp
@@ -33,6 +34,7 @@ def create_app() -> Flask:
 
     # ── Blueprints ───────────────────────────────────────────────────────────
     app.register_blueprint(generation_bp)
+    app.register_blueprint(composition_bp)
     app.register_blueprint(analysis_bp)
     app.register_blueprint(similarity_bp)
     app.register_blueprint(sound_bp)

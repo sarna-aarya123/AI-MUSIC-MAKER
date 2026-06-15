@@ -78,8 +78,3 @@ def generate_melody():
 @generation_bp.post("/drums")
 def generate_drums():
     return _stub("generate_drums")
-
-
-@generation_bp.post("/composition")
-def generate_composition():
-    return _stub("generate_composition")

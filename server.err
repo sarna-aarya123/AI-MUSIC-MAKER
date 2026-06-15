@@ -1,0 +1,60 @@
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on http://127.0.0.1:5000
+Press CTRL+C to quit
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+127.0.0.1 - - [14/Jun/2026 19:50:04] "GET /api/health HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 19:50:04] "POST /api/generate/chords HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:05] "POST /api/generate/melody HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:05] "POST /api/generate/drums HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:05] "POST /api/generate/composition HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "GET /api/health HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/generate/chords HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/generate/melody HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/generate/drums HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/generate/composition HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/analysis/detect HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/similarity/generate HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:26] "POST /api/sound/generate HTTP/1.1" 501 -
+127.0.0.1 - - [14/Jun/2026 19:50:35] "GET / HTTP/1.1" 200 -
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\music_theory\\harmony.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\music_theory\\genres.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\backend\\services\\chord_service.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\backend\\routes\\generation.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+127.0.0.1 - - [14/Jun/2026 19:59:06] "POST /api/generate/chords HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 19:59:15] "POST /api/generate/chords HTTP/1.1" 200 -
+127.0.0.1 - - [14/Jun/2026 19:59:24] "POST /api/generate/chords HTTP/1.1" 400 -
+127.0.0.1 - - [14/Jun/2026 19:59:25] "POST /api/generate/chords HTTP/1.1" 200 -
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\backend\\services\\chord_service.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\tests\\test_chord_service.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\midi\\builder.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\music_theory\\rhythm.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779
+ * Detected change in 'C:\\PROJECTS\\MUSIC-MAKER\\tests\\test_rhythm.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 412-653-779

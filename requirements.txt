@@ -1,0 +1,16 @@
+# Web framework
+flask>=3.0
+flask-cors>=4.0
+
+# MIDI construction
+midiutil>=1.2
+pretty_midi>=0.2
+
+# Audio analysis
+librosa>=0.10
+numpy>=1.26
+scipy>=1.12
+soundfile>=0.12
+
+# Utilities
+python-dotenv>=1.0

@@ -86,7 +86,8 @@ async function generateSong() {
     T.startBeat   = 0;
 
     renderAll(data);
-    AudioScheduler.load(data);   // prime event queue for playback
+    AudioScheduler.load(data);    // prime event queue for playback
+    initEditorFromData(data);     // Phase 4: wire editing state + interactions
 
     btnDownload.disabled = false;
     btnPlay.disabled     = false;

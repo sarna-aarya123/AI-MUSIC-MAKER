@@ -131,5 +131,17 @@ const AudioScheduler = (() => {
     }
   }
 
-  return { load, reset, process };
+  // ── patch ─────────────────────────────────────────────────────────────────
+  // Hot-swap the event queue from DAW_STATE edits (note drag, mute, etc.).
+  // Repositions the cursor to currentBeat so in-progress playback is unaffected.
+  function patch(newEvents, currentBeat) {
+    events   = [...newEvents].sort((a, b) => a.beat - b.beat);
+    lastBeat = currentBeat ?? lastBeat;  // prevent false loop-reset on next process()
+    // Rewind cursor to the first event that hasn't cleanly passed yet
+    nextIdx = 0;
+    const floor = (currentBeat ?? 0) - PAST_TOLERANCE;
+    while (nextIdx < events.length && events[nextIdx].beat < floor) nextIdx++;
+  }
+
+  return { load, reset, process, patch };
 })();

@@ -480,3 +480,110 @@ input[type='number'] { -moz-appearance: textfield; }
   color: var(--accent);
   font-weight: 700;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════ */
+/* Phase 4 — Interactive editor                                                */
+/* ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Melody clip: crosshair cursor so it reads as an editable canvas ──────── */
+#clip-melody { cursor: crosshair; }
+
+/* ── Notes: draggable ─────────────────────────────────────────────────────── */
+.melody-note { cursor: grab; }
+.melody-note:hover { filter: brightness(1.35); }
+
+.melody-note.selected {
+  outline: 1.5px solid rgba(255, 255, 255, 0.88);
+  outline-offset: 1px;
+  z-index: 15;
+  filter: brightness(1.25);
+}
+
+/* ── Chord blocks: selectable ─────────────────────────────────────────────── */
+.chord-block { cursor: default; }
+
+.chord-block.selected {
+  outline: 2px solid rgba(255, 255, 255, 0.8);
+  outline-offset: 0;
+  z-index: 15;
+}
+
+/* ── Chord resize handle (right edge grab zone) ───────────────────────────── */
+.chord-resize-handle {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 8px;
+  cursor: ew-resize;
+  border-radius: 0 3px 3px 0;
+  z-index: 10;
+  transition: background 0.1s;
+}
+.chord-resize-handle:hover,
+.chord-block.selected .chord-resize-handle {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* ── Global drag-state cursors ─────────────────────────────────────────────── */
+body.daw-dragging,
+body.daw-dragging * { cursor: grabbing !important; user-select: none; }
+
+body.daw-resizing,
+body.daw-resizing * { cursor: ew-resize !important; user-select: none; }
+
+/* ── Track controls row (M / S / instrument) ──────────────────────────────── */
+.track-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.btn-track-ctrl {
+  flex-shrink: 0;
+  width: 20px;
+  height: 17px;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  border: 1px solid #2c2c2c;
+  background: #131313;
+  color: #424242;
+  border-radius: 2px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  transition: color 0.1s, background 0.1s, border-color 0.1s;
+}
+.btn-track-ctrl:hover { color: #777; border-color: #404040; }
+
+.btn-mute.muted  { background: #7a2222; border-color: #b03030; color: #ffaaaa; }
+.btn-solo.soloed { background: #6a5400; border-color: #c4a020; color: #ffe580; }
+
+/* Instrument select — fits inside the controls row */
+.track-instr-select {
+  flex: 1;
+  min-width: 0;
+  height: 17px;
+  font-size: 9px;
+  padding: 0 4px;
+  background: #111;
+  border: 1px solid #282828;
+  color: #5a5a5a;
+  border-radius: 2px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath fill='%23444' d='M0 0l4 5 4-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  padding-right: 16px;
+}
+.track-instr-select:focus { border-color: var(--accent); outline: none; color: #888; }
+.track-instr-select:hover { border-color: #3a3a3a; }
+
+/* Allow clip height to match a taller header without clipping content */
+.track--chords .track-clip { min-height: 72px;  height: auto; }
+.track--melody .track-clip { min-height: 120px; height: auto; }
+
+/* Vertically align header content from top (more controls means more height) */
+.track-header { justify-content: flex-start; padding-top: 9px; }

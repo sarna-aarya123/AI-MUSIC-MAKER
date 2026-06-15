@@ -156,5 +156,19 @@ const AudioEngine = (() => {
     // Percussive synths are self-decaying; no explicit stop needed.
   }
 
-  return { init, playDrum, playNote, playChord, stopAll };
+  // ── Instrument preset switching ───────────────────────────────────────────
+  // preset: { oscillator: { type }, envelope: { attack, decay, sustain, release } }
+  function setInstrument(track, preset) {
+    if (!ready) return;
+    try {
+      if (track === 'melody') {
+        melodySynth.set(preset);
+      } else if (track === 'chords') {
+        chordSynth.releaseAll();   // release any held voices before changing timbre
+        chordSynth.set(preset);
+      }
+    } catch (_) {}
+  }
+
+  return { init, playDrum, playNote, playChord, stopAll, setInstrument };
 })();

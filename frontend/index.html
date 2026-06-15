@@ -129,6 +129,10 @@
     <div class="dbg-item"><span>Bar</span>   <span class="dbg-val" id="dbg-bar">—</span></div>
   </div>
 
+  <!-- Audio layer: Tone.js → engine → scheduler → studio (order matters) -->
+  <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+  <script src="audio/audioEngine.js"></script>
+  <script src="audio/scheduler.js"></script>
   <script src="scripts/studio.js"></script>
 </body>
 </html>

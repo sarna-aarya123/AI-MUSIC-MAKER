@@ -86,6 +86,7 @@ async function generateSong() {
     T.startBeat   = 0;
 
     renderAll(data);
+    AudioScheduler.load(data);   // prime event queue for playback
 
     btnDownload.disabled = false;
     btnPlay.disabled     = false;
@@ -330,6 +331,7 @@ function tick(now) {
 
   T.currentBeat = beat;
   updatePlayhead(beat);
+  AudioScheduler.process(beat, T.bpm);
   T.rafId = requestAnimationFrame(tick);
 }
 
@@ -351,8 +353,10 @@ function updatePlayhead(beat) {
   if (dbgBar)  dbgBar.textContent  = bar + 1;
 }
 
-function playTransport() {
+async function playTransport() {
   if (T.totalBeats === 0 || btnPlay.disabled) return;
+  await Tone.start();   // resume AudioContext on first user gesture (idempotent)
+  AudioEngine.init();   // build instruments if not already built (idempotent)
   T.isPlaying = true;
   T.startWall = performance.now();
   T.startBeat = T.currentBeat;
@@ -368,6 +372,7 @@ function stopTransport() {
   T.startBeat   = 0;
   if (T.rafId) { cancelAnimationFrame(T.rafId); T.rafId = null; }
   updatePlayhead(0);
+  AudioScheduler.reset();
   btnPlay.textContent = '▶';
   btnPlay.title = 'Play  (Space)';
   btnPlay.classList.remove('playing');

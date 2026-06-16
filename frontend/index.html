@@ -120,6 +120,31 @@
     </footer>
 
   </div>
+  <!-- ── Import Panel (MP3 → similar melody) ─────────────────────────────── -->
+  <div id="import-panel" class="import-panel">
+    <div class="import-header">
+      <span class="import-title">IMPORT SONG</span>
+      <span class="import-hint">MP3 → similar melody</span>
+      <button id="btn-import-toggle" class="import-toggle" title="Collapse">–</button>
+    </div>
+    <div id="import-body" class="import-body">
+      <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0"
+           title="Click to browse or drag an audio file">
+        <span class="import-drop-label">Drop MP3 / WAV here, or click to browse</span>
+        <input id="import-file-input" type="file" accept="audio/*" hidden />
+      </div>
+      <div id="import-progress" class="import-progress" style="display:none">
+        <div id="import-progress-bar" class="import-progress-bar"></div>
+      </div>
+      <div class="import-actions">
+        <button id="btn-import-generate" class="btn btn-import-generate" disabled>
+          Generate Similar Melody
+        </button>
+      </div>
+      <div id="import-status" class="import-status"></div>
+    </div>
+  </div>
+
   <!-- ── One-Shot Generator panel ────────────────────────────────────────── -->
   <div id="oneshot-panel" class="oneshot-panel">
     <div class="oneshot-header">
@@ -160,5 +185,7 @@
   <script src="scripts/editor.js"></script>
   <script src="audio/oneshotEngine.js"></script>
   <script src="scripts/oneShotUI.js"></script>
+  <script src="audio/melodyExtractor.js"></script>
+  <script src="scripts/importUI.js"></script>
 </body>
 </html>

@@ -206,6 +206,43 @@ function _clearSelection() {
   DAW_STATE.selectedIds.clear();
 }
 
+// ── Import: replace melody track from extracted notes ─────────────────────────
+// Called by importUI.js after MelodyExtractor runs.
+// newNotes: [{ beat, pitch, duration, velocity }]
+function refreshMelodyTrack(newNotes) {
+  // Remove existing note DOM elements
+  for (const n of DAW_STATE.notes) {
+    if (n._el) { n._el.remove(); n._el = null; }
+  }
+  DAW_STATE.selectedIds.clear();
+
+  // Install new notes
+  DAW_STATE.notes = (newNotes || []).map((n, i) => ({
+    id:       `mn-imp-${Date.now()}-${i}`,
+    beat:     Math.max(0, Math.min(n.beat,     DAW_STATE.totalBeats - 0.25)),
+    duration: Math.max(0.125,                  n.duration ?? 0.25),
+    pitch:    Math.max(24, Math.min(96,        n.pitch)),
+    velocity: Math.max(30, Math.min(127,       n.velocity ?? 85)),
+    _el:      null,
+  }));
+
+  // Rebuild pitch range + DOM
+  _recalcPitchRange();
+  const clip = document.getElementById('clip-melody');
+  for (const note of DAW_STATE.notes) {
+    note._el = _buildNoteEl(note);
+    clip.appendChild(note._el);
+  }
+
+  const metaEl = document.getElementById('meta-melody');
+  if (metaEl) {
+    metaEl.textContent = DAW_STATE.notes.length
+      ? `${DAW_STATE.notes.length} notes` : 'empty';
+  }
+
+  patchScheduler();
+}
+
 // ── Note operations ───────────────────────────────────────────────────────────
 function _addNote(data) {
   const note = {

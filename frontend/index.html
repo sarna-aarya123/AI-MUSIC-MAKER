@@ -3,189 +3,175 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Music Studio</title>
-  <link rel="stylesheet" href="styles/studio.css" />
+  <title>Beat Identity Engine</title>
+  <link rel="stylesheet" href="styles/loop_studio.css" />
 </head>
 <body>
-  <div class="studio">
 
-    <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
-    <header class="topbar">
-      <span class="logo">AI Music Studio</span>
-      <div class="topbar-spacer"></div>
-      <button id="btn-generate" class="btn btn-primary">Generate Song</button>
-      <button id="btn-play" class="btn btn-transport" disabled title="Play / Stop  (Space)">▶</button>
-      <button id="btn-loop" class="btn btn-loop"      disabled title="Loop on — click to toggle">⟳</button>
-      <div class="topbar-divider"></div>
-      <button id="btn-download" class="btn btn-secondary" disabled>Download MIDI</button>
-      <button id="btn-debug" class="btn btn-dbg-toggle" title="Debug panel  (D)">dbg</button>
-    </header>
+<div class="studio">
 
-    <!-- ── Control strip ───────────────────────────────────────────────────── -->
-    <div class="controls-strip">
-      <div class="ctrl-group">
-        <span class="ctrl-label">Key</span>
-        <select id="ctrl-key">
-          <option>C</option><option>C#</option><option>D</option>
-          <option>Eb</option><option>E</option><option>F</option>
-          <option>F#</option><option>G</option><option>Ab</option>
-          <option>A</option><option>Bb</option><option>B</option>
-        </select>
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">Mode</span>
-        <select id="ctrl-mode">
-          <option value="major">Major</option>
-          <option value="minor">Minor</option>
-          <option value="dorian">Dorian</option>
-          <option value="phrygian">Phrygian</option>
-          <option value="lydian">Lydian</option>
-          <option value="mixolydian">Mixolydian</option>
-          <option value="happy">Happy</option>
-          <option value="sad">Sad</option>
-          <option value="jazzy">Jazzy</option>
-          <option value="melancholic">Melancholic</option>
-          <option value="dark">Dark</option>
-        </select>
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">Genre</span>
-        <select id="ctrl-genre">
-          <option value="pop">Pop</option>
-          <option value="hip-hop">Hip-Hop</option>
-          <option value="jazz">Jazz</option>
-          <option value="lo-fi">Lo-Fi</option>
-          <option value="edm">EDM</option>
-        </select>
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">BPM</span>
-        <input id="ctrl-bpm" type="number" value="120" min="60" max="240" step="1" />
-      </div>
-      <div class="ctrl-group">
-        <span class="ctrl-label">Bars</span>
-        <input id="ctrl-bars" type="number" value="4" min="1" max="16" step="1" />
-      </div>
+  <!-- ── Topbar ─────────────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <span class="brand">BEAT IDENTITY ENGINE</span>
+    <span class="brand-sub">loop generator</span>
+
+    <div class="transport-group">
+      <button id="btn-evolve"   class="btn btn-evolve">EVOLVE</button>
+      <button id="btn-activate" class="btn btn-activate" disabled>▶ ACTIVATE</button>
+      <button id="btn-stop"     class="btn" disabled>■</button>
+      <button id="btn-mutate"   class="btn btn-mutate" disabled title="Drift motif now">⟳ DRIFT</button>
+    </div>
+  </header>
+
+  <!-- ── Phase pulse ──────────────────────────────────────────────────────────── -->
+  <div class="phase-pulse-wrap">
+    <div id="phase-bar"></div>
+  </div>
+
+  <!-- ── Controls strip ───────────────────────────────────────────────────────── -->
+  <div class="controls-strip">
+    <label class="ctrl-group">
+      <span>GENRE</span>
+      <select id="ctrl-genre">
+        <option value="rage">RAGE</option>
+        <option value="pluggnb">PLUGGNB</option>
+        <option value="dark_trap">DARK TRAP</option>
+        <option value="cloud">CLOUD</option>
+      </select>
+    </label>
+
+    <label class="ctrl-group">
+      <span>ROOT</span>
+      <select id="ctrl-root">
+        <option value="A" selected>A</option>
+        <option value="A#">A#</option>
+        <option value="B">B</option>
+        <option value="C">C</option>
+        <option value="C#">C#</option>
+        <option value="D">D</option>
+        <option value="D#">D#</option>
+        <option value="E">E</option>
+        <option value="F">F</option>
+        <option value="F#">F#</option>
+        <option value="G">G</option>
+        <option value="G#">G#</option>
+      </select>
+    </label>
+
+    <label class="ctrl-group">
+      <span>BPM</span>
+      <input id="ctrl-bpm" type="number" value="140" min="60" max="220" />
+    </label>
+
+    <label class="ctrl-group">
+      <span>LOOP LENGTH</span>
+      <select id="ctrl-bars">
+        <option value="1">1 bar</option>
+        <option value="2" selected>2 bars</option>
+        <option value="4">4 bars</option>
+        <option value="8">8 bars</option>
+      </select>
+    </label>
+
+    <span id="status-text" style="margin-left:auto; font-size:10px; color:#444; font-family:monospace;"></span>
+  </div>
+
+  <!-- ── Main area ─────────────────────────────────────────────────────────────── -->
+  <div class="loop-area">
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">◈</div>
+      <span>Press EVOLVE to generate a loop identity</span>
     </div>
 
-    <!-- ── Tracks area ──────────────────────────────────────────────────────── -->
-    <main class="tracks-area">
+    <!-- Loop view (hidden until first evolve) -->
+    <div id="loop-view" hidden>
 
-      <div id="empty-state" class="empty-state">
-        <div class="empty-icon">♫</div>
-        <div class="empty-hint">Click <strong>Generate Song</strong> to compose</div>
-      </div>
-
-      <div id="tracks-container" hidden>
-
-        <!-- Beat ruler -->
-        <div class="ruler-row">
-          <div class="ruler-spacer"></div>
-          <div class="ruler" id="ruler"></div>
-        </div>
-
-        <!-- Chords track -->
-        <div class="track track--chords">
-          <div class="track-header">
-            <div class="track-label">CHORDS</div>
-            <div class="track-meta" id="meta-chords"></div>
+      <!-- MOTIF layer -->
+      <div class="layer layer-motif">
+        <div class="layer-header">
+          <div class="layer-name">MOTIF</div>
+          <div class="layer-sub">looping pattern</div>
+          <div class="layer-controls">
+            <button class="btn btn-mute" data-layer="motif" title="Mute motif">M</button>
           </div>
-          <div class="track-clip" id="clip-chords"></div>
         </div>
+        <div id="clip-motif" class="layer-clip">
+          <div class="layer-playhead" id="ph-motif"></div>
+        </div>
+      </div>
 
-        <!-- Melody track -->
-        <div class="track track--melody">
-          <div class="track-header">
-            <div class="track-label">MELODY</div>
-            <div class="track-meta" id="meta-melody"></div>
+      <!-- BASS layer -->
+      <div class="layer layer-bass">
+        <div class="layer-header">
+          <div class="layer-name">BASS</div>
+          <div class="layer-sub">root anchor</div>
+          <div class="layer-controls">
+            <button class="btn btn-mute" data-layer="bass" title="Mute bass">M</button>
           </div>
-          <div class="track-clip" id="clip-melody"></div>
         </div>
+        <div id="clip-bass" class="layer-clip">
+          <div class="layer-playhead" id="ph-bass"></div>
+        </div>
+      </div>
 
-        <!-- Drums track -->
-        <div class="track track--drums">
-          <div class="track-header">
-            <div class="track-label">DRUMS</div>
-            <div class="track-meta" id="meta-drums"></div>
+      <!-- TEXTURE layer -->
+      <div class="layer layer-texture" style="flex:1">
+        <div class="layer-header">
+          <div class="layer-name">TEXTURE</div>
+          <div class="layer-sub">stacked voices</div>
+          <div class="layer-controls">
+            <button class="btn btn-mute" data-layer="texture" title="Mute texture">M</button>
           </div>
-          <div class="track-clip" id="clip-drums"></div>
         </div>
-
+        <div class="layer-clip" style="flex:1">
+          <div id="texture-stack"></div>
+        </div>
       </div>
-    </main>
 
-    <!-- ── Status bar ───────────────────────────────────────────────────────── -->
-    <footer class="statusbar">
-      <span id="status-text" class="status-text">Ready</span>
-    </footer>
+    </div><!-- /#loop-view -->
+  </div><!-- /.loop-area -->
 
+  <!-- ── Status bar ──────────────────────────────────────────────────────────── -->
+  <footer class="statusbar">
+    <span id="status-main">No loop loaded — press EVOLVE</span>
+  </footer>
+
+</div><!-- /.studio -->
+
+<!-- ── Import panel (feel-based, not note-based) ──────────────────────────── -->
+<div id="import-panel" class="import-panel">
+  <div class="import-header">
+    <span class="import-title">IMPORT FEEL</span>
+    <span class="import-hint">audio → loop identity</span>
+    <button id="btn-import-toggle" class="import-toggle" title="Collapse">–</button>
   </div>
-  <!-- ── Import Panel (MP3 → similar melody) ─────────────────────────────── -->
-  <div id="import-panel" class="import-panel">
-    <div class="import-header">
-      <span class="import-title">IMPORT SONG</span>
-      <span class="import-hint">MP3 → similar melody</span>
-      <button id="btn-import-toggle" class="import-toggle" title="Collapse">–</button>
+  <div id="import-body" class="import-body">
+    <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0"
+         title="Click to browse or drag an audio file">
+      <span class="import-drop-label">Drop MP3 / WAV here, or click to browse</span>
+      <input id="import-file-input" type="file" accept="audio/*" hidden />
     </div>
-    <div id="import-body" class="import-body">
-      <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0"
-           title="Click to browse or drag an audio file">
-        <span class="import-drop-label">Drop MP3 / WAV here, or click to browse</span>
-        <input id="import-file-input" type="file" accept="audio/*" hidden />
-      </div>
-      <div id="import-progress" class="import-progress" style="display:none">
-        <div id="import-progress-bar" class="import-progress-bar"></div>
-      </div>
-      <div class="import-actions">
-        <button id="btn-import-generate" class="btn btn-import-generate" disabled>
-          Generate Similar Melody
-        </button>
-      </div>
-      <div id="import-status" class="import-status"></div>
+    <div id="import-progress" class="import-progress" style="display:none">
+      <div id="import-progress-bar" class="import-progress-bar"></div>
     </div>
+    <div class="import-actions">
+      <button id="btn-import-generate" class="btn btn-import-generate" disabled>
+        Generate Similar Loop Identity
+      </button>
+    </div>
+    <div id="import-status" class="import-status"></div>
   </div>
+</div>
 
-  <!-- ── One-Shot Generator panel ────────────────────────────────────────── -->
-  <div id="oneshot-panel" class="oneshot-panel">
-    <div class="oneshot-header">
-      <span class="oneshot-title">ONE-SHOT GEN</span>
-      <span class="oneshot-hint">describe a sound, hear it instantly</span>
-      <button id="btn-oneshot-toggle" class="oneshot-toggle" title="Collapse">–</button>
-    </div>
-    <div id="oneshot-body" class="oneshot-body">
-      <div class="oneshot-row">
-        <input id="oneshot-input" type="text" class="oneshot-input"
-               placeholder='"tight punchy kick"  ·  "soft bright pluck"  ·  "metallic hi-hat"' />
-        <button id="btn-oneshot-preview" class="btn btn-oneshot-preview">▶ Preview</button>
-      </div>
-      <div class="oneshot-row">
-        <span class="oneshot-slots-label">Assign to slot →</span>
-        <button class="btn-assign" data-slot="kick"  title="Replace kick drum sound">KICK</button>
-        <button class="btn-assign" data-slot="snare" title="Replace snare sound">SNRE</button>
-        <button class="btn-assign" data-slot="hihat" title="Replace hi-hat sound">HHAT</button>
-      </div>
-      <div id="oneshot-info" class="oneshot-info"></div>
-    </div>
-  </div>
+<!-- ── Scripts (order matters) ───────────────────────────────────────────────── -->
+<script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
+<script src="audio/loopEngine.js"></script>
+<script src="audio/loopScheduler.js"></script>
+<script src="scripts/loop_studio.js"></script>
+<script src="audio/melodyExtractor.js"></script>
+<script src="scripts/importUI.js"></script>
 
-  <!-- ── Debug panel (fixed overlay, toggle with D or dbg button) ─────────── -->
-  <div id="debug-panel" class="debug-panel" hidden>
-    <div class="dbg-header">DEBUG <span class="dbg-close" id="dbg-close">✕</span></div>
-    <div class="dbg-item"><span>BPM</span>   <span class="dbg-val" id="dbg-bpm">—</span></div>
-    <div class="dbg-item"><span>Beats</span> <span class="dbg-val" id="dbg-total">—</span></div>
-    <div class="dbg-item"><span>Beat</span>  <span class="dbg-val" id="dbg-beat">—</span></div>
-    <div class="dbg-item"><span>Bar</span>   <span class="dbg-val" id="dbg-bar">—</span></div>
-  </div>
-
-  <!-- Audio layer: Tone.js → engine → scheduler → studio (order matters) -->
-  <script src="https://unpkg.com/tone@14.7.77/build/Tone.js"></script>
-  <script src="audio/audioEngine.js"></script>
-  <script src="audio/scheduler.js"></script>
-  <script src="scripts/studio.js"></script>
-  <script src="scripts/editor.js"></script>
-  <script src="audio/oneshotEngine.js"></script>
-  <script src="scripts/oneShotUI.js"></script>
-  <script src="audio/melodyExtractor.js"></script>
-  <script src="scripts/importUI.js"></script>
 </body>
 </html>

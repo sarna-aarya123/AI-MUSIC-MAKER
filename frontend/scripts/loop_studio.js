@@ -1,0 +1,353 @@
+// ── Loop Identity Generator — Main Controller ─────────────────────────────────
+// Manages: transport, API calls, phase-derived visuals, UI wiring.
+//
+// The scheduler receives only currentPhase (0→1). This file is the ONLY place
+// where wall-clock time is converted to phase. Everything downstream is phase-only.
+//
+// No chord logic. No DAW state. No timeline. No song concept.
+
+// ── Transport state ────────────────────────────────────────────────────────────
+const T = {
+  isPlaying:     false,
+  bpm:           140,
+  loopLength:    8,      // beats per cycle
+  startWall:     0,      // performance.now() at last play()
+  startBeat:     0,      // beat position at play() — resets on stop
+  currentPhase:  0,      // 0 → 1, current loop position
+  rafId:         null,
+};
+
+// ── Loop state (what we received from the API, what drives audio) ──────────────
+const LOOP_STATE = {
+  motif:       [],
+  bass:        [],
+  textures:    [],
+  bpm:         140,
+  loopLength:  8,
+  tonalCenter: 69,
+  root:        'A',
+  genre:       'rage',
+  muted:       new Set(),   // 'motif' | 'bass' | 'texture'
+};
+
+// ── DOM refs ───────────────────────────────────────────────────────────────────
+const elEvolve    = document.getElementById('btn-evolve');
+const elActivate  = document.getElementById('btn-activate');
+const elStop      = document.getElementById('btn-stop');
+const elMutate    = document.getElementById('btn-mutate');
+const elStatus    = document.getElementById('status-text');   // controls-strip brief msg
+const elStatusMain = document.getElementById('status-main'); // footer long description
+const elPhaseBar  = document.getElementById('phase-bar');
+// Playhead elements in each layer clip
+const elPhMotif  = document.getElementById('ph-motif');
+const elPhBass   = document.getElementById('ph-bass');
+
+// ── Transport: RAF loop ────────────────────────────────────────────────────────
+function _tick() {
+  if (!T.isPlaying) return;
+
+  // Wall-clock → beat → phase
+  const elapsedSec  = (performance.now() - T.startWall) / 1000;
+  const absBeats    = T.startBeat + elapsedSec * (T.bpm / 60);
+  const currentPhase = (absBeats % T.loopLength) / T.loopLength;  // [0, 1)
+
+  T.currentPhase = currentPhase;
+
+  // All scheduling lives here — phase only
+  LoopScheduler.tick(currentPhase, T.bpm);
+
+  // Visual: update pulse indicator
+  _updatePulse(currentPhase);
+
+  T.rafId = requestAnimationFrame(_tick);
+}
+
+function _startTransport() {
+  if (T.isPlaying) return;
+  T.isPlaying  = true;
+  T.startWall  = performance.now();
+  T.startBeat  = 0;
+  elActivate.textContent = '■ DEACTIVATE';
+  elActivate.classList.add('active');
+  elStop.disabled = false;
+  T.rafId = requestAnimationFrame(_tick);
+}
+
+function _stopTransport() {
+  T.isPlaying = false;
+  if (T.rafId) { cancelAnimationFrame(T.rafId); T.rafId = null; }
+  LoopScheduler.reset();
+  _updatePulse(0);
+  elActivate.textContent = '▶ ACTIVATE';
+  elActivate.classList.remove('active');
+  elStop.disabled = true;
+}
+
+// ── Visual: phase pulse + layer playheads ─────────────────────────────────────
+function _updatePulse(phase) {
+  const pct = `${(phase * 100).toFixed(3)}%`;
+
+  // Top phase bar (scale from left)
+  if (elPhaseBar) elPhaseBar.style.transform = `scaleX(${phase.toFixed(4)})`;
+
+  // Vertical playhead lines in each layer clip
+  if (elPhMotif) elPhMotif.style.left = pct;
+  if (elPhBass)  elPhBass.style.left  = pct;
+}
+
+// ── Evolve: fetch new loop identity from backend ───────────────────────────────
+async function evolve() {
+  if (T.isPlaying) _stopTransport();
+
+  elEvolve.disabled    = true;
+  elEvolve.textContent = 'EVOLVING…';
+  _setStatus('Generating loop identity…');
+
+  try {
+    const params = _getParams();
+    const res    = await fetch('/api/loop/evolve', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(params),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    _installLoop(data);
+
+  } catch (err) {
+    _setStatus(`Error: ${err.message}`, true);
+    console.error('[LoopStudio]', err);
+  } finally {
+    elEvolve.disabled    = false;
+    elEvolve.textContent = 'EVOLVE';
+  }
+}
+
+function _getParams() {
+  return {
+    genre: document.getElementById('ctrl-genre')?.value ?? 'rage',
+    root:  document.getElementById('ctrl-root')?.value  ?? 'A',
+    bpm:   parseInt(document.getElementById('ctrl-bpm')?.value  ?? '140', 10),
+    bars:  parseInt(document.getElementById('ctrl-bars')?.value ?? '4',   10),
+    seed:  Math.floor(Math.random() * 99999),
+  };
+}
+
+// ── Install a loop identity received from the API ──────────────────────────────
+function _installLoop(data) {
+  // Store in LOOP_STATE
+  LOOP_STATE.motif       = data.motif       ?? [];
+  LOOP_STATE.bass        = data.bass        ?? [];
+  LOOP_STATE.textures    = data.textures    ?? [];
+  LOOP_STATE.bpm         = data.bpm         ?? 140;
+  LOOP_STATE.loopLength  = data.loop_length ?? 8;
+  LOOP_STATE.tonalCenter = data.tonal_center ?? 69;
+  LOOP_STATE.root        = data.root        ?? 'A';
+  LOOP_STATE.genre       = data.genre       ?? 'rage';
+
+  // Sync transport BPM
+  T.bpm        = LOOP_STATE.bpm;
+  T.loopLength = LOOP_STATE.loopLength;
+
+  // Override BPM display
+  const bpmEl = document.getElementById('ctrl-bpm');
+  if (bpmEl) bpmEl.value = T.bpm;
+
+  // Prime audio engine (idempotent)
+  LoopEngine.init(data.portamento ?? 0.02);
+  LoopEngine.setPortamento(data.portamento ?? 0.02);
+
+  // Load scheduler — phase-space only from here
+  LoopScheduler.load(data);
+
+  // Render layer visualisations
+  _renderMotifLayer(LOOP_STATE.motif, LOOP_STATE.loopLength);
+  _renderBassLayer(LOOP_STATE.bass,   LOOP_STATE.loopLength);
+  _renderTextureStack(LOOP_STATE.textures);
+
+  // Enable controls
+  elActivate.disabled = false;
+  elMutate.disabled   = false;
+
+  // Show main view
+  document.getElementById('empty-state').hidden = true;
+  document.getElementById('loop-view').hidden   = false;
+
+  const summary = `${data.genre.toUpperCase()}  ·  root ${data.root}  ·  ${data.bpm} BPM  ·  ${data.loop_length}-beat loop  ·  ${data.motif.length} motif events  ·  ${data.textures.length} texture layers`;
+  if (elStatusMain) elStatusMain.textContent = summary;
+  _setStatus('Loop identity loaded');
+}
+
+// ── Layer renders ──────────────────────────────────────────────────────────────
+
+function _renderMotifLayer(motif, loopLength) {
+  const clip = document.getElementById('clip-motif');
+  if (!clip) return;
+  clip.innerHTML = '';
+
+  if (!motif.length) return;
+
+  const pitches = motif.map(n => n.pitch);
+  const lo      = Math.min(...pitches) - 1;
+  const hi      = Math.max(...pitches) + 1;
+  const range   = hi - lo || 1;
+
+  // Grid lines at each beat
+  for (let b = 1; b < loopLength; b++) {
+    const line = document.createElement('div');
+    line.className = 'phase-grid-line';
+    line.style.left = `${(b / loopLength) * 100}%`;
+    clip.appendChild(line);
+  }
+
+  // Note elements
+  for (const note of motif) {
+    const phasePos = note.beat / loopLength;
+    const phaseDur = note.duration / loopLength;
+    const bottom   = ((note.pitch - lo) / range) * 78 + 6;
+    const alpha    = 0.50 + (note.velocity / 127) * 0.50;
+
+    const el = document.createElement('div');
+    el.className   = 'motif-note';
+    el.style.left  = `${phasePos * 100}%`;
+    el.style.width = `${Math.max(0.5, phaseDur * 100)}%`;
+    el.style.bottom = `${bottom}%`;
+    el.style.opacity = alpha;
+    el.title = `pitch ${note.pitch}  beat ${note.beat}`;
+    clip.appendChild(el);
+  }
+}
+
+function _renderBassLayer(bass, loopLength) {
+  const clip = document.getElementById('clip-bass');
+  if (!clip) return;
+  clip.innerHTML = '';
+
+  for (const note of bass) {
+    const phasePos = note.beat / loopLength;
+    const phaseDur = Math.min(note.duration, loopLength - note.beat) / loopLength;
+
+    const el = document.createElement('div');
+    el.className   = 'bass-note';
+    el.style.left  = `${phasePos * 100}%`;
+    el.style.width = `calc(${phaseDur * 100}% - 2px)`;
+    el.title       = `root ${note.pitch}`;
+    clip.appendChild(el);
+  }
+}
+
+function _renderTextureStack(textures) {
+  const stack = document.getElementById('texture-stack');
+  if (!stack) return;
+  stack.innerHTML = '';
+
+  textures.forEach((tx, i) => {
+    const row = document.createElement('div');
+    row.className = 'texture-row';
+
+    // Color hint based on osc type
+    const hue = tx.osc_type === 'sawtooth' ? 265
+              : tx.osc_type === 'square'    ? 200
+              : tx.osc_type === 'sine'      ? 160
+              : 290;
+    row.style.setProperty('--tx-hue', hue);
+
+    row.innerHTML = `
+      <span class="tx-osc">${tx.osc_type.toUpperCase().slice(0, 3)}</span>
+      <span class="tx-detail">
+        detune <strong>${tx.detune > 0 ? '+' : ''}${tx.detune.toFixed(0)}</strong>
+        · filter <strong>${Math.round(tx.filter_freq)} Hz</strong>
+        · wet <strong>${Math.round(tx.reverb_wet * 100)}%</strong>
+        · pan <strong>${tx.pan > 0 ? 'R' : tx.pan < 0 ? 'L' : 'C'}${Math.abs(Math.round(tx.pan * 100))}</strong>
+      </span>
+      <div class="tx-bar" style="opacity:${0.3 + tx.gain * 3}"></div>
+    `;
+    stack.appendChild(row);
+  });
+}
+
+// ── Mute controls ──────────────────────────────────────────────────────────────
+function _toggleMute(layer) {
+  const muted = !LOOP_STATE.muted.has(layer);
+  if (muted) LOOP_STATE.muted.add(layer);
+  else        LOOP_STATE.muted.delete(layer);
+
+  LoopScheduler.setMute(layer, muted);
+
+  // Texture layer: start/stop oscillators
+  if (layer === 'texture') {
+    if (muted) LoopEngine.stopTextures();
+    else        LoopEngine.startTextures(LOOP_STATE.textures);
+  }
+
+  // Update mute button appearance
+  const btn = document.querySelector(`.btn-mute[data-layer="${layer}"]`);
+  if (btn) btn.classList.toggle('muted', muted);
+}
+
+// ── Event wiring ───────────────────────────────────────────────────────────────
+elEvolve?.addEventListener('click', evolve);
+
+elActivate?.addEventListener('click', async () => {
+  if (T.isPlaying) {
+    _stopTransport();
+    // Stop textures too
+    LoopEngine.stopTextures();
+  } else {
+    await Tone.start();
+    LoopEngine.init(0.02);
+    // Start texture oscillators (continuous — not scheduled)
+    if (!LOOP_STATE.muted.has('texture')) {
+      LoopEngine.startTextures(LOOP_STATE.textures);
+    }
+    _startTransport();
+  }
+});
+
+elStop?.addEventListener('click', () => {
+  _stopTransport();
+  LoopEngine.stopTextures();
+});
+
+elMutate?.addEventListener('click', () => {
+  LoopScheduler.triggerVariation();
+  // Re-render motif layer to show mutation
+  _renderMotifLayer(LoopScheduler.getCurrentMotif(), LOOP_STATE.loopLength);
+  _flashStatus('Motif drifted');
+});
+
+// Mute buttons
+document.querySelectorAll('.btn-mute').forEach(btn => {
+  btn.addEventListener('click', () => _toggleMute(btn.dataset.layer));
+});
+
+// Spacebar: toggle transport
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+    e.preventDefault();
+    elActivate?.click();
+  }
+});
+
+// ── Status helpers ─────────────────────────────────────────────────────────────
+function _setStatus(msg, isError = false) {
+  if (!elStatus) return;
+  elStatus.textContent = msg;
+  elStatus.classList.toggle('error', isError);
+}
+
+function _flashStatus(msg) {
+  const prev = elStatus?.textContent;
+  _setStatus(msg);
+  setTimeout(() => { if (elStatus) elStatus.textContent = prev; }, 1200);
+}
+
+// Initial state
+elActivate && (elActivate.disabled = true);
+elMutate   && (elMutate.disabled   = true);
+elStop     && (elStop.disabled     = true);

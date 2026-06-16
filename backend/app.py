@@ -17,6 +17,7 @@ from backend.routes.composition import composition_bp
 from backend.routes.analysis import analysis_bp
 from backend.routes.similarity import similarity_bp
 from backend.routes.sound import sound_bp
+from backend.routes.loop import loop_bp
 
 _FRONTEND_DIR = Path(__file__).resolve().parent.parent / "frontend"
 
@@ -38,6 +39,7 @@ def create_app() -> Flask:
     app.register_blueprint(analysis_bp)
     app.register_blueprint(similarity_bp)
     app.register_blueprint(sound_bp)
+    app.register_blueprint(loop_bp)
 
     # ── Health check ─────────────────────────────────────────────────────────
     @app.get("/api/health")

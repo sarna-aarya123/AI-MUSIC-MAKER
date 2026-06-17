@@ -196,18 +196,19 @@ def _gen_bass(rng, params, tonal_center, loop_length):
     if rng.random() < 0.45:
         # Static drone
         return [{
-            'beat':     0.0,
-            'pitch':    root,
-            'duration': float(loop_length),
-            'velocity': 95,
+            'phase_start':    0.0,
+            'phase_duration': 1.0,
+            'pitch':          root,
+            'velocity':       95,
         }]
 
     # Two-note pattern
-    half  = loop_length / 2
-    note2 = root + rng.choice(intervals[1:])
+    half      = loop_length / 2
+    note2     = root + rng.choice(intervals[1:])
+    dur_phase = round(half * 0.92 / loop_length, 6)   # 0.5 * 0.92 = 0.46
     return [
-        {'beat': 0.0,  'pitch': root,  'duration': round(half * 0.92, 3), 'velocity': 95},
-        {'beat': half, 'pitch': note2, 'duration': round(half * 0.92, 3), 'velocity': 85},
+        {'phase_start': 0.0, 'phase_duration': dur_phase, 'pitch': root,  'velocity': 95},
+        {'phase_start': 0.5, 'phase_duration': dur_phase, 'pitch': note2, 'velocity': 85},
     ]
 
 

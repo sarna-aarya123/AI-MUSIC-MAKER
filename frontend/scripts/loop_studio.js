@@ -141,8 +141,18 @@ function _getParams() {
 // ── Install a loop identity received from the API ──────────────────────────────
 function _installLoop(data) {
   // Store in LOOP_STATE
-  LOOP_STATE.motif       = data.motif       ?? [];
-  LOOP_STATE.bass        = data.bass        ?? [];
+  LOOP_STATE.motif       = (data.motif ?? []).map(n => ({
+    phaseStart:    n.phase_start    ?? 0,
+    phaseDuration: n.phase_duration ?? 0.1,
+    pitch:         n.pitch,
+    velocity:      n.velocity,
+  }));
+  LOOP_STATE.bass        = (data.bass ?? []).map(n => ({
+    phaseStart:    n.phase_start    ?? 0,
+    phaseDuration: n.phase_duration ?? 0.5,
+    pitch:         n.pitch,
+    velocity:      n.velocity,
+  }));
   LOOP_STATE.textures    = data.textures    ?? [];
   LOOP_STATE.bpm         = data.bpm         ?? 140;
   LOOP_STATE.loopLength  = data.loop_length ?? 8;
@@ -166,8 +176,8 @@ function _installLoop(data) {
   LoopScheduler.load(data);
 
   // Render layer visualisations
-  _renderMotifLayer(LOOP_STATE.motif, LOOP_STATE.loopLength);
-  _renderBassLayer(LOOP_STATE.bass,   LOOP_STATE.loopLength);
+  _renderMotifLayer(LOOP_STATE.motif);
+  _renderBassLayer(LOOP_STATE.bass);
   _renderTextureStack(LOOP_STATE.textures);
 
   // Enable controls
@@ -185,10 +195,14 @@ function _installLoop(data) {
 
 // ── Layer renders ──────────────────────────────────────────────────────────────
 
-function _renderMotifLayer(motif, loopLength) {
+function _renderMotifLayer(motif) {
   const clip = document.getElementById('clip-motif');
   if (!clip) return;
+
+  // Preserve the playhead node — innerHTML clear detaches it
+  const ph = clip.querySelector('.layer-playhead');
   clip.innerHTML = '';
+  if (ph) clip.appendChild(ph);
 
   if (!motif.length) return;
 
@@ -197,46 +211,43 @@ function _renderMotifLayer(motif, loopLength) {
   const hi      = Math.max(...pitches) + 1;
   const range   = hi - lo || 1;
 
-  // Grid lines at each beat
-  for (let b = 1; b < loopLength; b++) {
+  // Grid lines at quarter-phase marks (25 / 50 / 75 %)
+  for (const frac of [0.25, 0.5, 0.75]) {
     const line = document.createElement('div');
     line.className = 'phase-grid-line';
-    line.style.left = `${(b / loopLength) * 100}%`;
+    line.style.left = `${frac * 100}%`;
     clip.appendChild(line);
   }
 
-  // Note elements
   for (const note of motif) {
-    const phasePos = note.beat / loopLength;
-    const phaseDur = note.duration / loopLength;
-    const bottom   = ((note.pitch - lo) / range) * 78 + 6;
-    const alpha    = 0.50 + (note.velocity / 127) * 0.50;
+    const bottom = ((note.pitch - lo) / range) * 78 + 6;
+    const alpha  = 0.50 + (note.velocity / 127) * 0.50;
 
     const el = document.createElement('div');
-    el.className   = 'motif-note';
-    el.style.left  = `${phasePos * 100}%`;
-    el.style.width = `${Math.max(0.5, phaseDur * 100)}%`;
-    el.style.bottom = `${bottom}%`;
+    el.className     = 'motif-note';
+    el.style.left    = `${note.phaseStart * 100}%`;
+    el.style.width   = `${Math.max(0.5, note.phaseDuration * 100)}%`;
+    el.style.bottom  = `${bottom}%`;
     el.style.opacity = alpha;
-    el.title = `pitch ${note.pitch}  beat ${note.beat}`;
+    el.title = `pitch ${note.pitch}  φ ${note.phaseStart.toFixed(3)}`;
     clip.appendChild(el);
   }
 }
 
-function _renderBassLayer(bass, loopLength) {
+function _renderBassLayer(bass) {
   const clip = document.getElementById('clip-bass');
   if (!clip) return;
+
+  const ph = clip.querySelector('.layer-playhead');
   clip.innerHTML = '';
+  if (ph) clip.appendChild(ph);
 
   for (const note of bass) {
-    const phasePos = note.beat / loopLength;
-    const phaseDur = Math.min(note.duration, loopLength - note.beat) / loopLength;
-
     const el = document.createElement('div');
     el.className   = 'bass-note';
-    el.style.left  = `${phasePos * 100}%`;
-    el.style.width = `calc(${phaseDur * 100}% - 2px)`;
-    el.title       = `root ${note.pitch}`;
+    el.style.left  = `${note.phaseStart * 100}%`;
+    el.style.width = `calc(${Math.min(note.phaseDuration, 1 - note.phaseStart) * 100}% - 2px)`;
+    el.title       = `root ${note.pitch}  φ ${note.phaseStart.toFixed(3)}`;
     clip.appendChild(el);
   }
 }
@@ -317,7 +328,7 @@ elStop?.addEventListener('click', () => {
 elMutate?.addEventListener('click', () => {
   LoopScheduler.triggerVariation();
   // Re-render motif layer to show mutation
-  _renderMotifLayer(LoopScheduler.getCurrentMotif(), LOOP_STATE.loopLength);
+  _renderMotifLayer(LoopScheduler.getCurrentMotif());
   _flashStatus('Motif drifted');
 });
 

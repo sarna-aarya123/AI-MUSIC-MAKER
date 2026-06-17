@@ -9,12 +9,12 @@
 //
 // Public API:
 //   init(portamento?)
-//   playMotifNote(midi, vel, audioTime, durSec)
-//   playBassNote(midi, vel, audioTime, durSec)
+//   gateOn(layer, midi, vel)   — 'motif' | 'bass' : immediate triggerAttack
+//   gateOff(layer)             — immediate triggerRelease
 //   startTextures(textureDefs[])
 //   stopTextures()
 //   stopAll()
-//   setMotifOsc(type)    — hot-swap oscillator type
+//   setMotifOsc(type)
 //   isReady()
 
 const LoopEngine = (() => {
@@ -64,23 +64,22 @@ const LoopEngine = (() => {
     ready = true;
   }
 
-  // ── Motif note ───────────────────────────────────────────────────────────────
-  function playMotifNote(midiPitch, velocity, audioTime, durationSec) {
+  // ── Gate model — no future scheduling, no duration ───────────────────────────
+  function gateOn(layer, midiPitch, velocity) {
     if (!ready) return;
     try {
       const freq = Tone.Frequency(midiPitch, 'midi').toFrequency();
       const vel  = Math.max(0.01, Math.min(1, velocity / 127));
-      motifSynth.triggerAttackRelease(freq, Math.max(0.04, durationSec), audioTime, vel);
+      if (layer === 'motif')     motifSynth.triggerAttack(freq, Tone.now(), vel);
+      else if (layer === 'bass') bassSynth.triggerAttack(freq, Tone.now(), vel);
     } catch (_) {}
   }
 
-  // ── Bass note ────────────────────────────────────────────────────────────────
-  function playBassNote(midiPitch, velocity, audioTime, durationSec) {
+  function gateOff(layer) {
     if (!ready) return;
     try {
-      const freq = Tone.Frequency(midiPitch, 'midi').toFrequency();
-      const vel  = Math.max(0.01, Math.min(1, velocity / 127));
-      bassSynth.triggerAttackRelease(freq, Math.max(0.05, durationSec), audioTime, vel);
+      if (layer === 'motif')     motifSynth.triggerRelease(Tone.now());
+      else if (layer === 'bass') bassSynth.triggerRelease(Tone.now());
     } catch (_) {}
   }
 
@@ -157,6 +156,6 @@ const LoopEngine = (() => {
 
   function isReady() { return ready; }
 
-  return { init, playMotifNote, playBassNote, startTextures, stopTextures,
+  return { init, gateOn, gateOff, startTextures, stopTextures,
            stopAll, setMotifOsc, setPortamento, isReady };
 })();

@@ -9,6 +9,7 @@
 //
 // Public API:
 //   init(portamento?)
+//   setPreset(genre)           — hot-apply genre-specific synth settings
 //   gateOn(layer, midi, vel)   — 'motif' | 'bass' : immediate triggerAttack
 //   gateOff(layer)             — immediate triggerRelease
 //   startTextures(textureDefs[])
@@ -62,6 +63,49 @@ const LoopEngine = (() => {
     bassSynth.connect(new Tone.Gain(0.90).connect(master));
 
     ready = true;
+  }
+
+  // ── Genre preset — applied when a new loop identity is loaded ────────────────
+  const _PRESETS = {
+    rage: {
+      motif: { oscillator: { type: 'sawtooth' },
+               filter: { frequency: 1600, Q: 3.8 },
+               envelope: { attack: 0.004, decay: 0.10, sustain: 0.18, release: 0.32 },
+               filterEnvelope: { attack: 0.003, decay: 0.09, sustain: 0.15, release: 0.28,
+                                 baseFrequency: 800, octaves: 2.8 } },
+      bass:  { filter: { frequency: 140 } },
+    },
+    pluggnb: {
+      motif: { oscillator: { type: 'triangle' },
+               filter: { frequency: 2400, Q: 1.8 },
+               envelope: { attack: 0.014, decay: 0.22, sustain: 0.50, release: 0.90 },
+               filterEnvelope: { attack: 0.012, decay: 0.18, sustain: 0.35, release: 0.70,
+                                 baseFrequency: 600, octaves: 2.0 } },
+      bass:  { filter: { frequency: 210 } },
+    },
+    dark_trap: {
+      motif: { oscillator: { type: 'square' },
+               filter: { frequency: 900, Q: 4.5 },
+               envelope: { attack: 0.008, decay: 0.16, sustain: 0.28, release: 0.65 },
+               filterEnvelope: { attack: 0.006, decay: 0.14, sustain: 0.22, release: 0.50,
+                                 baseFrequency: 500, octaves: 2.2 } },
+      bass:  { filter: { frequency: 110 } },
+    },
+    cloud: {
+      motif: { oscillator: { type: 'triangle' },
+               filter: { frequency: 3200, Q: 1.2 },
+               envelope: { attack: 0.022, decay: 0.28, sustain: 0.65, release: 1.30 },
+               filterEnvelope: { attack: 0.018, decay: 0.22, sustain: 0.50, release: 1.00,
+                                 baseFrequency: 900, octaves: 1.8 } },
+      bass:  { filter: { frequency: 260 } },
+    },
+  };
+
+  function setPreset(genre) {
+    if (!ready) return;
+    const p = _PRESETS[genre] ?? _PRESETS.rage;
+    try { if (p.motif) motifSynth.set(p.motif); } catch (_) {}
+    try { if (p.bass)  bassSynth.set({ filter: p.bass.filter }); } catch (_) {}
   }
 
   // ── Gate model — no future scheduling, no duration ───────────────────────────
@@ -154,8 +198,26 @@ const LoopEngine = (() => {
     try { motifSynth.portamento = Math.max(0, val); } catch (_) {}
   }
 
+  // Apply lead instrument config received from API (overrides genre preset)
+  function applyInstrumentConfig(cfg) {
+    if (!ready || !cfg) return;
+    try {
+      const patch = {};
+      if (cfg.osc_type)   patch.oscillator    = { type: cfg.osc_type };
+      if (cfg.envelope)   patch.envelope      = cfg.envelope;
+      if (cfg.filter_env) patch.filterEnvelope = cfg.filter_env;
+      if (cfg.filter_freq || cfg.filter_q) {
+        patch.filter = {};
+        if (cfg.filter_freq) patch.filter.frequency = cfg.filter_freq;
+        if (cfg.filter_q)    patch.filter.Q         = cfg.filter_q;
+      }
+      motifSynth.set(patch);
+    } catch (_) {}
+    if (cfg.portamento !== undefined) setPortamento(cfg.portamento);
+  }
+
   function isReady() { return ready; }
 
-  return { init, gateOn, gateOff, startTextures, stopTextures,
-           stopAll, setMotifOsc, setPortamento, isReady };
+  return { init, setPreset, applyInstrumentConfig, gateOn, gateOff,
+           startTextures, stopTextures, stopAll, setMotifOsc, setPortamento, isReady };
 })();

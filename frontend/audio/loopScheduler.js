@@ -21,10 +21,12 @@ const LoopScheduler = (() => {
 
   const DRIFT_EVERY = 6;
 
-  let _motif      = [];
-  let _bass       = [];
-  let _loopLength = 8;    // beats — only for drift nudge calculation
-  let _loaded     = false;
+  let _motif        = [];
+  let _bass         = [];
+  let _loopLength   = 8;    // beats — for drift nudge calculation
+  let _scale        = [0, 3, 5, 7, 10];   // scale intervals, updated per loop
+  let _tonalCenter  = 69;                  // MIDI root, updated per loop
+  let _loaded       = false;
 
   // Gate states: "m{i}" | "b{i}" → true (open) | false (closed)
   const _gates    = new Map();
@@ -34,9 +36,11 @@ const LoopScheduler = (() => {
 
   // ── load ─────────────────────────────────────────────────────────────────────
   function load(identity) {
-    _motif      = _prepare(identity.motif ?? []);
-    _bass       = _prepare(identity.bass  ?? []);
-    _loopLength = identity.loop_length ?? 8;
+    _motif       = _prepare(identity.motif ?? []);
+    _bass        = _prepare(identity.bass  ?? []);
+    _loopLength  = identity.loop_length  ?? 8;
+    _scale       = identity.scale        ?? [0, 3, 5, 7, 10];
+    _tonalCenter = identity.tonal_center ?? 69;
     _loaded     = true;
     _hardReset();
   }
@@ -149,31 +153,46 @@ const LoopScheduler = (() => {
   // ── getCurrentMotif ───────────────────────────────────────────────────────────
   function getCurrentMotif() { return [..._motif]; }
 
-  // ── _drift: subtle identity-preserving motif mutation ─────────────────────────
+  // ── _drift: scale-aware identity-preserving motif mutation ───────────────────
+  // Pitch mutations always move to adjacent scale degrees — never outside key.
   function _drift() {
-    const nudge = 0.25 / _loopLength;   // one 16th-note in phase units
+    const nudge    = 0.25 / _loopLength;               // 1/16th note in phase units
+    const rootPc   = _tonalCenter % 12;
+    const scalePcs = _scale.map(s => (rootPc + s) % 12); // pitch classes in scale
 
     _motif = _motif.map(note => {
       const r = Math.random();
 
-      if (r < 0.20) {
-        const dir = Math.random() < 0.5 ? 1 : -1;
-        return { ...note, pitch: Math.max(36, Math.min(84, note.pitch + dir)) };
+      if (r < 0.28) {
+        // Move to adjacent scale degree (always stays in key)
+        const pc  = note.pitch % 12;
+        const idx = scalePcs.indexOf(pc);
+        if (idx !== -1) {
+          const dir    = Math.random() < 0.5 ? 1 : -1;
+          const newIdx = ((idx + dir) + scalePcs.length) % scalePcs.length;
+          const newPc  = scalePcs[newIdx];
+          let delta    = newPc - pc;
+          if (delta >  6) delta -= 12;   // prefer smallest interval
+          if (delta < -6) delta += 12;
+          const newPitch = Math.max(36, Math.min(84, note.pitch + delta));
+          return { ...note, pitch: newPitch };
+        }
       }
 
-      if (r < 0.32) {
+      if (r < 0.44) {
+        // Timing nudge ±1 sixteenth, stays snapped to 16th grid
         const sign     = Math.random() < 0.5 ? 1 : -1;
-        const newStart = Math.max(0, Math.min(0.99 - note.phaseDuration, note.phaseStart + sign * nudge));
-        const newEnd   = (newStart + note.phaseDuration) % 1.0;
-        return { ...note,
-          phaseStart: +newStart.toFixed(6),
-          phaseEnd:   +newEnd.toFixed(6),
-        };
+        const raw      = note.phaseStart + sign * nudge;
+        const clamped  = Math.max(0, Math.min(0.99 - note.phaseDuration, raw));
+        const snapped  = Math.round(clamped / nudge) * nudge;
+        const newEnd   = (snapped + note.phaseDuration) % 1.0;
+        return { ...note, phaseStart: +snapped.toFixed(6), phaseEnd: +newEnd.toFixed(6) };
       }
 
-      if (r < 0.38) {
-        const dv = Math.round((Math.random() - 0.5) * 24);
-        return { ...note, velocity: Math.max(40, Math.min(115, note.velocity + dv)) };
+      if (r < 0.52) {
+        // Velocity accent shift — small, musical
+        const dv = Math.round((Math.random() - 0.5) * 18);
+        return { ...note, velocity: Math.max(45, Math.min(110, note.velocity + dv)) };
       }
 
       return { ...note };

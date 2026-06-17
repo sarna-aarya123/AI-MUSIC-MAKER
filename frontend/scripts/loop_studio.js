@@ -67,7 +67,7 @@ function _startTransport() {
   T.isPlaying  = true;
   T.startWall  = performance.now();
   T.startBeat  = 0;
-  elActivate.textContent = '■ DEACTIVATE';
+  elActivate.textContent = '■ PLAYING';
   elActivate.classList.add('active');
   elStop.disabled = false;
   T.rafId = requestAnimationFrame(_tick);
@@ -78,7 +78,7 @@ function _stopTransport() {
   if (T.rafId) { cancelAnimationFrame(T.rafId); T.rafId = null; }
   LoopScheduler.reset();
   _updatePulse(0);
-  elActivate.textContent = '▶ ACTIVATE';
+  elActivate.textContent = '▶ PLAY LOOP';
   elActivate.classList.remove('active');
   elStop.disabled = true;
 }
@@ -100,7 +100,9 @@ async function evolve() {
   if (T.isPlaying) _stopTransport();
 
   elEvolve.disabled    = true;
-  elEvolve.textContent = 'EVOLVING…';
+  elEvolve.textContent = 'GENERATING…';
+  // Blur text input so repeated Enter key doesn't re-trigger
+  document.getElementById('input-describe')?.blur();
   _setStatus('Generating loop identity…');
 
   try {
@@ -124,17 +126,21 @@ async function evolve() {
     console.error('[LoopStudio]', err);
   } finally {
     elEvolve.disabled    = false;
-    elEvolve.textContent = 'EVOLVE';
+    elEvolve.textContent = 'CREATE LOOP';
   }
 }
 
 function _getParams() {
+  const desc      = document.getElementById('input-describe')?.value?.trim() ?? '';
+  const leadInst  = document.getElementById('ctrl-lead-inst')?.value ?? '';
   return {
-    genre: document.getElementById('ctrl-genre')?.value ?? 'rage',
-    root:  document.getElementById('ctrl-root')?.value  ?? 'A',
-    bpm:   parseInt(document.getElementById('ctrl-bpm')?.value  ?? '140', 10),
-    bars:  parseInt(document.getElementById('ctrl-bars')?.value ?? '4',   10),
-    seed:  Math.floor(Math.random() * 99999),
+    genre:           document.getElementById('ctrl-genre')?.value ?? 'rage',
+    root:            document.getElementById('ctrl-root')?.value  ?? 'A',
+    bpm:             parseInt(document.getElementById('ctrl-bpm')?.value  ?? '140', 10),
+    bars:            parseInt(document.getElementById('ctrl-bars')?.value ?? '4',   10),
+    seed:            Math.floor(Math.random() * 99999),
+    description:     desc || undefined,
+    lead_instrument: leadInst || undefined,
   };
 }
 
@@ -168,9 +174,12 @@ function _installLoop(data) {
   const bpmEl = document.getElementById('ctrl-bpm');
   if (bpmEl) bpmEl.value = T.bpm;
 
-  // Prime audio engine (idempotent)
+  // Prime audio engine + apply synth settings
   LoopEngine.init(data.portamento ?? 0.02);
   LoopEngine.setPortamento(data.portamento ?? 0.02);
+  LoopEngine.setPreset(data.genre ?? 'rage');
+  // Lead instrument config overrides genre preset when present
+  if (data.synth_config) LoopEngine.applyInstrumentConfig(data.synth_config);
 
   // Load scheduler — phase-space only from here
   LoopScheduler.load(data);
@@ -188,9 +197,11 @@ function _installLoop(data) {
   document.getElementById('empty-state').hidden = true;
   document.getElementById('loop-view').hidden   = false;
 
-  const summary = `${data.genre.toUpperCase()}  ·  root ${data.root}  ·  ${data.bpm} BPM  ·  ${data.loop_length}-beat loop  ·  ${data.motif.length} motif events  ·  ${data.textures.length} texture layers`;
+  const scaleName = { rage: 'minor pent', pluggnb: 'natural minor', dark_trap: 'phrygian', cloud: 'major pent' }[data.genre] ?? '';
+  const instLabel = data.lead_instrument ? `  ·  ${data.lead_instrument.replace('_', ' ')} lead` : '';
+  const summary = `${data.genre.toUpperCase()}  ·  ${data.root} ${scaleName}${instLabel}  ·  ${data.bpm} BPM  ·  ${data.loop_length / 4}-bar loop  ·  ${LOOP_STATE.motif.length} motif notes  ·  ${data.textures.length} texture layers`;
   if (elStatusMain) elStatusMain.textContent = summary;
-  _setStatus('Loop identity loaded');
+  _setStatus('Loop ready');
 }
 
 // ── Layer renders ──────────────────────────────────────────────────────────────
@@ -261,22 +272,29 @@ function _renderTextureStack(textures) {
     const row = document.createElement('div');
     row.className = 'texture-row';
 
-    // Color hint based on osc type
-    const hue = tx.osc_type === 'sawtooth' ? 265
-              : tx.osc_type === 'square'    ? 200
-              : tx.osc_type === 'sine'      ? 160
-              : 290;
+    // Color by texture archetype
+    const hue = tx.archetype === 'aggressive' ? 15
+              : tx.archetype === 'dark'        ? 270
+              : tx.archetype === 'ambient'     ? 160
+              : tx.archetype === 'airy'        ? 190
+              : tx.archetype === 'wide'        ? 265
+              : 265;
     row.style.setProperty('--tx-hue', hue);
 
+    const archLabel = (tx.archetype ?? tx.osc_type ?? '—').toUpperCase().slice(0, 4);
+    const panStr    = tx.pan > 0.05 ? `R${Math.round(tx.pan * 100)}`
+                    : tx.pan < -0.05 ? `L${Math.round(Math.abs(tx.pan) * 100)}`
+                    : 'C';
     row.innerHTML = `
-      <span class="tx-osc">${tx.osc_type.toUpperCase().slice(0, 3)}</span>
+      <span class="tx-osc">${archLabel}</span>
       <span class="tx-detail">
-        detune <strong>${tx.detune > 0 ? '+' : ''}${tx.detune.toFixed(0)}</strong>
-        · filter <strong>${Math.round(tx.filter_freq)} Hz</strong>
-        · wet <strong>${Math.round(tx.reverb_wet * 100)}%</strong>
-        · pan <strong>${tx.pan > 0 ? 'R' : tx.pan < 0 ? 'L' : 'C'}${Math.abs(Math.round(tx.pan * 100))}</strong>
+        <strong>${tx.osc_type.slice(0, 3).toUpperCase()}</strong>
+        · det <strong>${tx.detune > 0 ? '+' : ''}${tx.detune.toFixed(0)}</strong>
+        · filt <strong>${Math.round(tx.filter_freq)} Hz</strong>
+        · rev <strong>${Math.round(tx.reverb_wet * 100)}%</strong>
+        · pan <strong>${panStr}</strong>
       </span>
-      <div class="tx-bar" style="opacity:${0.3 + tx.gain * 3}"></div>
+      <div class="tx-bar" style="opacity:${0.25 + tx.gain * 3}"></div>
     `;
     stack.appendChild(row);
   });
@@ -329,7 +347,7 @@ elMutate?.addEventListener('click', () => {
   LoopScheduler.triggerVariation();
   // Re-render motif layer to show mutation
   _renderMotifLayer(LoopScheduler.getCurrentMotif());
-  _flashStatus('Motif drifted');
+  _flashStatus('Variation applied');
 });
 
 // Mute buttons
@@ -337,13 +355,36 @@ document.querySelectorAll('.btn-mute').forEach(btn => {
   btn.addEventListener('click', () => _toggleMute(btn.dataset.layer));
 });
 
-// Spacebar: toggle transport
+// Spacebar: toggle transport (not when user is typing)
 document.addEventListener('keydown', e => {
-  if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
+  if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
     e.preventDefault();
     elActivate?.click();
   }
+  // Enter in describe field → generate
+  if (e.code === 'Enter' && e.target.id === 'input-describe') {
+    e.preventDefault();
+    elEvolve?.click();
+  }
 });
+
+// ── LoopTransport global — used by importUI for loop preview in import panel ──
+window.LoopTransport = {
+  start: async () => {
+    if (T.isPlaying) return;
+    await Tone.start();
+    LoopEngine.init(0.02);
+    if (!LOOP_STATE.muted.has('texture')) LoopEngine.startTextures(LOOP_STATE.textures);
+    _startTransport();
+  },
+  stop: () => {
+    _stopTransport();
+    LoopEngine.stopTextures();
+  },
+  isPlaying: () => T.isPlaying,
+  getPhase:  () => T.currentPhase,
+  hasLoop:   () => LOOP_STATE.motif.length > 0,
+};
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
 function _setStatus(msg, isError = false) {
@@ -362,3 +403,6 @@ function _flashStatus(msg) {
 elActivate && (elActivate.disabled = true);
 elMutate   && (elMutate.disabled   = true);
 elStop     && (elStop.disabled     = true);
+
+// Expose _installLoop globally for importUI.js
+window._installLoop = _installLoop;

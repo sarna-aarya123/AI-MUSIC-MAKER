@@ -16,10 +16,9 @@
     <span class="brand-sub">loop generator</span>
 
     <div class="transport-group">
-      <button id="btn-evolve"   class="btn btn-evolve">EVOLVE</button>
-      <button id="btn-activate" class="btn btn-activate" disabled>▶ ACTIVATE</button>
-      <button id="btn-stop"     class="btn" disabled>■</button>
-      <button id="btn-mutate"   class="btn btn-mutate" disabled title="Drift motif now">⟳ DRIFT</button>
+      <button id="btn-activate" class="btn btn-activate" disabled>▶ PLAY LOOP</button>
+      <button id="btn-stop"     class="btn btn-stop-icon" disabled title="Stop">■</button>
+      <button id="btn-mutate"   class="btn btn-mutate" disabled title="Apply variation to motif">⟳ VARIATION</button>
     </div>
   </header>
 
@@ -28,52 +27,78 @@
     <div id="phase-bar"></div>
   </div>
 
-  <!-- ── Controls strip ───────────────────────────────────────────────────────── -->
-  <div class="controls-strip">
-    <label class="ctrl-group">
-      <span>GENRE</span>
-      <select id="ctrl-genre">
-        <option value="rage">RAGE</option>
-        <option value="pluggnb">PLUGGNB</option>
-        <option value="dark_trap">DARK TRAP</option>
-        <option value="cloud">CLOUD</option>
-      </select>
-    </label>
+  <!-- ── Creation strip ──────────────────────────────────────────────────────── -->
+  <div class="creation-strip">
+    <div class="creation-row-text">
+      <input
+        id="input-describe"
+        type="text"
+        class="input-describe"
+        placeholder="Describe your sound… e.g. dark bell loop, aggressive saw lead, dreamy cloud"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button id="btn-evolve" class="btn btn-create">CREATE LOOP</button>
+    </div>
+    <div class="creation-row-params">
+      <label class="ctrl-group">
+        <span>GENRE</span>
+        <select id="ctrl-genre">
+          <option value="rage">RAGE</option>
+          <option value="pluggnb">PLUGGNB</option>
+          <option value="dark_trap">DARK TRAP</option>
+          <option value="cloud">CLOUD</option>
+        </select>
+      </label>
 
-    <label class="ctrl-group">
-      <span>ROOT</span>
-      <select id="ctrl-root">
-        <option value="A" selected>A</option>
-        <option value="A#">A#</option>
-        <option value="B">B</option>
-        <option value="C">C</option>
-        <option value="C#">C#</option>
-        <option value="D">D</option>
-        <option value="D#">D#</option>
-        <option value="E">E</option>
-        <option value="F">F</option>
-        <option value="F#">F#</option>
-        <option value="G">G</option>
-        <option value="G#">G#</option>
-      </select>
-    </label>
+      <label class="ctrl-group">
+        <span>LEAD</span>
+        <select id="ctrl-lead-inst">
+          <option value="">Auto</option>
+          <option value="bell">Bell</option>
+          <option value="pluck">Pluck</option>
+          <option value="saw_lead">Saw Lead</option>
+          <option value="fm_lead">FM Lead</option>
+          <option value="glass">Glass</option>
+          <option value="square">Square</option>
+        </select>
+      </label>
 
-    <label class="ctrl-group">
-      <span>BPM</span>
-      <input id="ctrl-bpm" type="number" value="140" min="60" max="220" />
-    </label>
+      <label class="ctrl-group">
+        <span>ROOT</span>
+        <select id="ctrl-root">
+          <option value="A" selected>A</option>
+          <option value="A#">A#</option>
+          <option value="B">B</option>
+          <option value="C">C</option>
+          <option value="C#">C#</option>
+          <option value="D">D</option>
+          <option value="D#">D#</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="F#">F#</option>
+          <option value="G">G</option>
+          <option value="G#">G#</option>
+        </select>
+      </label>
 
-    <label class="ctrl-group">
-      <span>LOOP LENGTH</span>
-      <select id="ctrl-bars">
-        <option value="1">1 bar</option>
-        <option value="2" selected>2 bars</option>
-        <option value="4">4 bars</option>
-        <option value="8">8 bars</option>
-      </select>
-    </label>
+      <label class="ctrl-group">
+        <span>BPM</span>
+        <input id="ctrl-bpm" type="number" value="140" min="60" max="220" />
+      </label>
 
-    <span id="status-text" style="margin-left:auto; font-size:10px; color:#444; font-family:monospace;"></span>
+      <label class="ctrl-group">
+        <span>BARS</span>
+        <select id="ctrl-bars">
+          <option value="1">1 bar</option>
+          <option value="2" selected>2 bars</option>
+          <option value="4">4 bars</option>
+          <option value="8">8 bars</option>
+        </select>
+      </label>
+
+      <span id="status-text" class="status-text-strip"></span>
+    </div>
   </div>
 
   <!-- ── Main area ─────────────────────────────────────────────────────────────── -->
@@ -82,17 +107,17 @@
     <!-- Empty state -->
     <div id="empty-state" class="empty-state">
       <div class="empty-icon">◈</div>
-      <span>Press EVOLVE to generate a loop identity</span>
+      <span>Describe your sound above and press <strong>CREATE LOOP</strong></span>
     </div>
 
-    <!-- Loop view (hidden until first evolve) -->
+    <!-- Loop view (hidden until first generation) -->
     <div id="loop-view" hidden>
 
       <!-- MOTIF layer -->
       <div class="layer layer-motif">
         <div class="layer-header">
           <div class="layer-name">MOTIF</div>
-          <div class="layer-sub">looping pattern</div>
+          <div class="layer-sub">melodic phrase</div>
           <div class="layer-controls">
             <button class="btn btn-mute" data-layer="motif" title="Mute motif">M</button>
           </div>
@@ -135,31 +160,81 @@
 
   <!-- ── Status bar ──────────────────────────────────────────────────────────── -->
   <footer class="statusbar">
-    <span id="status-main">No loop loaded — press EVOLVE</span>
+    <span id="status-main">No loop loaded — describe your sound and press CREATE LOOP</span>
   </footer>
 
 </div><!-- /.studio -->
 
-<!-- ── Import panel (feel-based, not note-based) ──────────────────────────── -->
+<!-- ── Import Feel panel ──────────────────────────────────────────────────── -->
 <div id="import-panel" class="import-panel">
   <div class="import-header">
     <span class="import-title">IMPORT FEEL</span>
-    <span class="import-hint">audio → loop identity</span>
+    <span class="import-hint">match vibe from audio</span>
     <button id="btn-import-toggle" class="import-toggle" title="Collapse">–</button>
   </div>
   <div id="import-body" class="import-body">
-    <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0"
-         title="Click to browse or drag an audio file">
-      <span class="import-drop-label">Drop MP3 / WAV here, or click to browse</span>
-      <input id="import-file-input" type="file" accept="audio/*" hidden />
+
+    <!-- State A: drop zone -->
+    <div id="import-state-drop">
+      <div id="import-dropzone" class="import-dropzone" role="button" tabindex="0">
+        <span class="import-drop-label">Drop MP3 / WAV or click to browse</span>
+        <input id="import-file-input" type="file" accept="audio/*" hidden />
+      </div>
     </div>
+
+    <!-- State B: loaded (shown once file is selected) -->
+    <div id="import-state-loaded" hidden>
+
+      <!-- File row -->
+      <div class="import-file-row">
+        <span class="import-file-icon">♪</span>
+        <span id="import-file-name" class="import-file-name"></span>
+        <button id="btn-clear-file" class="import-clear" title="Remove file">✕</button>
+      </div>
+
+      <!-- Feel card -->
+      <div id="import-feel-card" class="import-feel-card">
+        <div class="feel-row"><span class="feel-label">ROOT</span><span id="feel-root" class="feel-value">—</span></div>
+        <div class="feel-row"><span class="feel-label">MOOD</span><span id="feel-mood" class="feel-value">—</span></div>
+        <div class="feel-row"><span class="feel-label">ENERGY</span><span id="feel-energy" class="feel-value">—</span></div>
+      </div>
+
+      <!-- Reference audio (hidden element) -->
+      <audio id="import-audio-ref" style="display:none"></audio>
+
+      <!-- Reference player -->
+      <div class="import-section-label">REFERENCE TRACK</div>
+      <div class="mini-player">
+        <button id="btn-ref-play" class="btn btn-player" disabled title="Play reference">▶</button>
+        <div class="mini-player-track">
+          <div id="ref-progress-fill" class="mini-player-fill"></div>
+        </div>
+        <span id="ref-time-display" class="mini-player-time">0:00</span>
+      </div>
+
+      <!-- Generated loop player (shown after generation) -->
+      <div id="gen-player-section" hidden>
+        <div class="import-section-label">GENERATED LOOP</div>
+        <div class="mini-player">
+          <button id="btn-loop-play" class="btn btn-player" title="Play/stop generated loop">▶</button>
+          <div class="mini-player-track">
+            <div id="loop-phase-fill" class="mini-player-fill loop-fill"></div>
+          </div>
+          <span class="mini-player-time">looping</span>
+        </div>
+        <div id="import-gen-detail" class="import-gen-detail"></div>
+      </div>
+
+      <!-- Action row -->
+      <div class="import-actions-row">
+        <button id="btn-play-both" class="btn btn-play-both" hidden>▶ Both</button>
+        <button id="btn-import-generate" class="btn btn-import-generate" disabled>Generate Similar</button>
+        <button id="btn-gen-again" class="btn btn-gen-again" hidden title="Regenerate">⟳</button>
+      </div>
+    </div>
+
     <div id="import-progress" class="import-progress" style="display:none">
       <div id="import-progress-bar" class="import-progress-bar"></div>
-    </div>
-    <div class="import-actions">
-      <button id="btn-import-generate" class="btn btn-import-generate" disabled>
-        Generate Similar Loop Identity
-      </button>
     </div>
     <div id="import-status" class="import-status"></div>
   </div>
